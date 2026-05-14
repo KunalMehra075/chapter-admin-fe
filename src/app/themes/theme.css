@@ -1,0 +1,102 @@
+/* ─── CSS Custom Properties ─────────────────────────────── */
+:root {
+  --pink: #ff5c67;
+  --pink-light: #ff8b8d;
+  --pink-pale: #fff0f4;
+  --pink-soft: #ffe0e8;
+}
+
+/* ─── Base (light) ──────────────────────────────────────── */
+.light {
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --primary: var(--pink);
+  --primary-foreground: #ffffff;
+  --ring: var(--pink);
+}
+
+/* ─── Dark ──────────────────────────────────────────────── */
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #09090b;
+  --card-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --border: #27272a;
+  --primary: var(--pink-light);
+  --primary-foreground: #09090b;
+  --ring: var(--pink-light);
+}
+
+/* ─── Theme: Rose (default — pink brand) ────────────────── */
+.theme-rose {
+  --primary: #ff5c67;
+  --primary-foreground: #ffffff;
+  --ring: #ff5c67;
+}
+.dark.theme-rose {
+  --primary: #ff8b8d;
+  --ring: #ff8b8d;
+}
+
+/* ─── Theme: Violet ─────────────────────────────────────── */
+.theme-violet {
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --ring: #7c3aed;
+}
+.dark.theme-violet {
+  --primary: #a78bfa;
+  --ring: #a78bfa;
+}
+
+/* ─── Theme: Sapphire ───────────────────────────────────── */
+.theme-sapphire {
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --ring: #2563eb;
+}
+.dark.theme-sapphire {
+  --primary: #93c5fd;
+  --ring: #93c5fd;
+}
+
+/* ─── Theme: Emerald ────────────────────────────────────── */
+.theme-emerald {
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+  --ring: #059669;
+}
+.dark.theme-emerald {
+  --primary: #6ee7b7;
+  --ring: #6ee7b7;
+}
+
+/* ─── Theme: Amber ──────────────────────────────────────── */
+.theme-amber {
+  --primary: #d97706;
+  --primary-foreground: #ffffff;
+  --ring: #d97706;
+}
+.dark.theme-amber {
+  --primary: #fcd34d;
+  --primary-foreground: #18181b;
+  --ring: #fcd34d;
+}
+
+/* ─── Theme: Slate ──────────────────────────────────────── */
+.theme-slate {
+  --primary: #475569;
+  --primary-foreground: #ffffff;
+  --ring: #475569;
+}
+.dark.theme-slate {
+  --primary: #94a3b8;
+  --ring: #94a3b8;
+}
