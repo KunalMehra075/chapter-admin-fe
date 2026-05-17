@@ -1,46 +1,50 @@
-import {
-  createBrowserRouter,
-} from "react-router-dom"
+import { Suspense } from "react";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import DashboardLayout from "@/layouts/dashboard-layout"
+import DashboardLayout from "@/layouts/dashboard-layout";
+import LoginPage from "@/pages/auth/login";
+import CompleteInvitePage from "@/pages/auth/complete-invite";
+import ForgotPasswordPage from "@/pages/auth/forgot-password";
+import ResetPasswordPage from "@/pages/auth/reset-password";
 
-import DashboardPage from "@/pages/dashboard"
-import WaitlistPage from "@/pages/waitlist"
-// import AnalyticsPage from "@/pages/dashboard/analytics"
-// import SettingsPage from "@/pages/dashboard/settings"
+import { RequireAuth } from "@/components/common/RequireAuth";
+import { RequirePermission } from "@/components/common/RequirePermission";
+import { modules } from "@/navigation/modules";
 
-import LoginPage from "@/pages/auth/login"
+const PageFallback = () => (
+  <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+    Loading…
+  </div>
+);
+
+const dashboardChildren = modules.map((m) => {
+  const Component = m.Component;
+  return {
+    path: m.path === "/" ? undefined : m.path.replace(/^\//, ""),
+    index: m.path === "/",
+    element: (
+      <RequirePermission permission={m.requiredPermission}>
+        <Suspense fallback={<PageFallback />}>
+          <Component />
+        </Suspense>
+      </RequirePermission>
+    ),
+  };
+});
 
 export const router = createBrowserRouter([
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-
+  { path: "/login", element: <LoginPage /> },
+  { path: "/complete-invite", element: <CompleteInvitePage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
   {
     path: "/",
-    element: <DashboardLayout />,
-
-    children: [
-      {
-        index: true,
-        element: <DashboardPage />,
-      },
-
-      {
-        path: "waitlist",
-        element: <WaitlistPage />,
-      },
-
-    //   {
-    //     path: "analytics",
-    //     element: <AnalyticsPage />,
-    //   },
-
-    //   {
-    //     path: "settings",
-    //     element: <SettingsPage />,
-    //   },
-    ],
+    element: (
+      <RequireAuth>
+        <DashboardLayout />
+      </RequireAuth>
+    ),
+    children: dashboardChildren,
   },
-])
+  { path: "*", element: <Navigate to="/" replace /> },
+]);

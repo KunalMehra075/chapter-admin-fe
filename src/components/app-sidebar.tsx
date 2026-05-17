@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 
 import {
   Sidebar,
@@ -11,219 +12,155 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
-import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
+import { modules, sidebarGroups, type ModuleConfig } from "@/navigation/modules";
+import { useAuth } from "@/app/providers/auth-provider";
+import { hasPermission } from "@/lib/permissions";
 
-import {
-  GalleryVerticalEndIcon,
-  AudioLinesIcon,
-  TerminalIcon,
-  TerminalSquareIcon,
-  BotIcon,
-  BookOpenIcon,
-  Settings2Icon,
-  FrameIcon,
-  PieChartIcon,
-  MapIcon,
-  Home,
-  BarChart3,
-  Settings,
-  UsersIcon,
-} from "lucide-react";
-
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+const teams = [
+  {
+    name: "Chapter",
+    logo: <img src="/logo.svg" alt="Chapter" className="size-6 object-contain" />,
+    plan: "Admin Dashboard",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <GalleryVerticalEndIcon />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <AudioLinesIcon />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <TerminalIcon />,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: <TerminalSquareIcon />,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: <BotIcon />,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: <BookOpenIcon />,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: <Settings2Icon />,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: <FrameIcon />,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: <PieChartIcon />,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: <MapIcon />,
-    },
-  ],
+];
+
+type SidebarEntry =
+  | { kind: "item"; item: ModuleConfig }
+  | { kind: "group"; group: (typeof sidebarGroups)[keyof typeof sidebarGroups]; items: ModuleConfig[] };
+
+const buildEntries = (visible: ModuleConfig[]): SidebarEntry[] => {
+  const entries: SidebarEntry[] = [];
+  const groupIndex = new Map<string, number>();
+
+  for (const item of visible) {
+    if (!item.group) {
+      entries.push({ kind: "item", item });
+      continue;
+    }
+    const groupCfg = sidebarGroups[item.group];
+    if (!groupCfg) {
+      entries.push({ kind: "item", item });
+      continue;
+    }
+    const existing = groupIndex.get(groupCfg.key);
+    if (existing !== undefined) {
+      const entry = entries[existing];
+      if (entry.kind === "group") entry.items.push(item);
+    } else {
+      groupIndex.set(groupCfg.key, entries.length);
+      entries.push({ kind: "group", group: groupCfg, items: [item] });
+    }
+  }
+  return entries;
 };
 
-
-const NavItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Waitlist",
-    url: "/waitlist",
-    icon: UsersIcon,
-  },
-  {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const visible = modules.filter((m) => {
+    if (m.showInSidebar === false) return false;
+    if (m.requiredPermission === null) return true;
+    return hasPermission(user?.access, m.requiredPermission);
+  });
+
+  const entries = buildEntries(visible);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-         <SidebarGroup>
+        <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className={({ isActive }) =>
-                        isActive ? "font-medium" : ""
-                      }
-                    >
-                      <item.icon />
+              {entries.map((entry) => {
+                if (entry.kind === "item") {
+                  const item = entry.item;
+                  return (
+                    <SidebarMenuItem key={item.key}>
+                      <SidebarMenuButton asChild tooltip={item.label}>
+                        <NavLink
+                          to={item.path}
+                          end={item.path === "/"}
+                          className={({ isActive }) => (isActive ? "font-medium" : "")}
+                        >
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
 
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                const { group, items } = entry;
+                const GroupIcon = group.icon;
+                const isAnyActive = items.some((i) =>
+                  location.pathname === i.path ||
+                  location.pathname.startsWith(`${i.path}/`)
+                );
+
+                return (
+                  <Collapsible
+                    key={group.key}
+                    asChild
+                    defaultOpen={isAnyActive}
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton tooltip={group.label}>
+                          <GroupIcon />
+                          <span>{group.label}</span>
+                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {items.map((sub) => (
+                            <SidebarMenuSubItem key={sub.key}>
+                              <SidebarMenuSubButton asChild>
+                                <NavLink
+                                  to={sub.path}
+                                  end={sub.path === "/"}
+                                  className={({ isActive }) =>
+                                    isActive ? "font-medium" : ""
+                                  }
+                                >
+                                  <sub.icon />
+                                  <span>{sub.label}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

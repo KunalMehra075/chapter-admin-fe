@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 
 import { CommonHeader } from "@/components/common/CommonHeader";
+import { Can } from "@/components/common/Can";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -143,22 +144,26 @@ export default function WaitlistPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openEdit(user)}
-                      >
-                        <PencilIcon className="size-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openDelete(user)}
-                      >
-                        <Trash2Icon className="size-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
+                      <Can permission="waitlist:update">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openEdit(user)}
+                        >
+                          <PencilIcon className="size-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      </Can>
+                      <Can permission="waitlist:delete">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openDelete(user)}
+                        >
+                          <Trash2Icon className="size-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </Can>
                     </div>
                   </td>
                 </tr>

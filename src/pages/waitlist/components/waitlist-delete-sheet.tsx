@@ -2,14 +2,14 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useDeleteWaitlistUser } from "@/hooks/useWaitlist";
 import type { WaitlistUser } from "@/api/waitlist";
 
@@ -42,22 +42,31 @@ export function WaitlistDeleteSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Delete waitlist user</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete waitlist user</DialogTitle>
+          <DialogDescription>
             This will permanently remove{" "}
             <span className="font-medium">{user?.email}</span> from the waitlist.
             This action cannot be undone.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         {error ? (
           <p className="text-sm text-destructive px-4">{error}</p>
         ) : null}
 
-        <SheetFooter>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+          </DialogClose>
           <Button
             type="button"
             variant="destructive"
@@ -66,18 +75,9 @@ export function WaitlistDeleteSheet({
           >
             {deleteMutation.isPending ? "Deleting..." : "Delete"}
           </Button>
-          <SheetClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleteMutation.isPending}
-            >
-              Cancel
-            </Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

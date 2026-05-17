@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useCreateWaitlistUser,
   useUpdateWaitlistUser,
 } from "@/hooks/useWaitlist";
+import { extractApiError } from "@/lib/api-error";
 import type { WaitlistUser } from "@/api/waitlist";
 
 interface WaitlistFormSheetProps {
@@ -46,8 +48,7 @@ export function WaitlistFormSheet({
     }
   }, [open, user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     setError(null);
 
     if (!name.trim() || !email.trim()) {
@@ -61,35 +62,48 @@ export function WaitlistFormSheet({
           id: user._id,
           input: { name: name.trim(), email: email.trim() },
         });
+        toast.success("Waitlist user updated");
       } else {
         await createMutation.mutateAsync({
           name: name.trim(),
           email: email.trim(),
         });
+        toast.success("Waitlist user added");
       }
       onOpenChange(false);
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error ?? "Something went wrong";
-      setError(message);
+      const apiErr = extractApiError(err);
+      if (apiErr.status === 409) {
+        toast.error("A user with this email already exists");
+        onOpenChange(false);
+        return;
+      }
+      setError(apiErr.message);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <SheetHeader>
-            <SheetTitle>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="p-0">
+        <div
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSave();
+            }
+          }}
+          className="flex flex-col max-h-[90vh]"
+        >
+          <DialogHeader>
+            <DialogTitle>
               {isEdit ? "Edit waitlist user" : "Add waitlist user"}
-            </SheetTitle>
-            <SheetDescription>
+            </DialogTitle>
+            <DialogDescription>
               {isEdit
                 ? "Update the details of this waitlist user."
                 : "Manually add a user to the waitlist."}
-            </SheetDescription>
-          </SheetHeader>
+            </DialogDescription>
+          </DialogHeader>
 
           <div className="flex flex-col gap-4 px-4 py-4 flex-1">
             <div className="flex flex-col gap-2">
@@ -117,19 +131,19 @@ export function WaitlistFormSheet({
             ) : null}
           </div>
 
-          <SheetFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Add user"}
-            </Button>
-            <SheetClose asChild>
+          <DialogFooter>
+            <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting}>
                 Cancel
               </Button>
-            </SheetClose>
-          </SheetFooter>
-        </form>
-      </SheetContent>
-    </Sheet>
+            </DialogClose>
+            <Button type="button" onClick={handleSave} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Add user"}
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

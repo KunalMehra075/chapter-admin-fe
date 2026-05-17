@@ -1,3 +1,6 @@
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,66 +10,94 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import ChapterLogo from "@/assets/svgs/chapter-logo";
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+import { useAuth } from "@/app/providers/auth-provider";
+import { extractApiError } from "@/lib/api-error";
+
+export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const { mustChangePassword } = await login(email, password);
+      navigate(mustChangePassword ? "/complete-invite" : "/", { replace: true });
+    } catch (err) {
+      const apiError = extractApiError(err);
+      if (apiError.status === 410) {
+        setError(
+          "Your invitation has expired. Contact your administrator to resend it."
+        );
+      } else if (apiError.status === 401) {
+        setError("Invalid email or password.");
+      } else {
+        setError(apiError.message);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-       <div className="flex items-center justify-center w-full"> <ChapterLogo width={120} height={70}/></div>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome</CardTitle>
-          <CardDescription>
-            Login to chapter's admin panel
-          </CardDescription>
+          <CardTitle className="text-xl">Welcome to Chapter Admin</CardTitle>
+          <CardDescription>Sign in with your admin credentials.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={onSubmit}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   required
                 />
               </Field>
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  {/* <a
-                    href="#"
+                  <Link
+                    to="/forgot-password"
                     className="ml-auto text-sm underline-offset-4 hover:underline"
                   >
                     Forgot your password?
-                  </a> */}
+                  </Link>
                 </div>
-                <Input id="password" placeholder="Enter Password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
               </Field>
+              {error ? (
+                <div className="text-sm text-destructive">{error}</div>
+              ) : null}
               <Field>
-                <Button type="submit">Login</Button>
-                {/* <FieldDescription className="text-center">
-                  Don't have an account? <a href="#">Sign up</a>
-                </FieldDescription> */}
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Signing in…" : "Sign in"}
+                </Button>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
     </div>
   );
 }
