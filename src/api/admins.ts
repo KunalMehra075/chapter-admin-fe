@@ -8,7 +8,8 @@ export interface AdminUser {
   phone: string | null;
   address: string | null;
   role: Role;
-  access: string[];
+  adminGroupId: string | null;
+  adminGroup: { id: string; name: string; role: Role } | null;
   mustChangePassword: boolean;
   inviteExpiresAt: string | null;
   createdAt: string;
@@ -39,7 +40,7 @@ export interface CreateAdminInput {
   password: string;
   phone?: string;
   address?: string;
-  access?: string[];
+  adminGroupId?: string | null;
 }
 
 export interface UpdateAdminInput {
@@ -47,7 +48,7 @@ export interface UpdateAdminInput {
   email?: string;
   phone?: string | null;
   address?: string | null;
-  access?: string[];
+  adminGroupId?: string | null;
 }
 
 const basePath = (role: Role): string => `/api/${role}s`;

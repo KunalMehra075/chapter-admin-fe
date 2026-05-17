@@ -12,12 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AccessTableField } from "./AccessTableField";
+import { AdminGroupPicker } from "./AdminGroupPicker";
 import { useUpdateAdmin } from "@/hooks/useAdmins";
 import { authApi } from "@/api/auth";
 import { extractApiError } from "@/lib/api-error";
 import type { AdminUser } from "@/api/admins";
 import type { Role } from "@/lib/permissions";
+import type { AdminGroupRole } from "@/api/admin-groups";
 
 interface EditAdminSheetProps {
   open: boolean;
@@ -31,12 +32,13 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [access, setAccess] = useState<string[]>([]);
+  const [adminGroupId, setAdminGroupId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
   const updateMutation = useUpdateAdmin(role);
+  const needsGroup = role !== "tenet";
 
   useEffect(() => {
     if (open && user) {
@@ -44,7 +46,7 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
       setEmail(user.email);
       setPhone(user.phone ?? "");
       setAddress(user.address ?? "");
-      setAccess(user.access);
+      setAdminGroupId(user.adminGroupId ?? null);
       setError(null);
       setResetSent(false);
     }
@@ -61,6 +63,10 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
       setError("Email is required");
       return;
     }
+    if (needsGroup && !adminGroupId) {
+      setError("Pick an admin group");
+      return;
+    }
     setError(null);
     try {
       await updateMutation.mutateAsync({
@@ -70,7 +76,7 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
           email: email.trim(),
           phone: phone.trim() ? phone.trim() : null,
           address: address.trim() ? address.trim() : null,
-          access,
+          ...(needsGroup ? { adminGroupId } : {}),
         },
       });
       toast.success("User updated");
@@ -92,7 +98,6 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
       await authApi.requestPasswordReset(user.email);
       setResetSent(true);
     } catch {
-      // Backend returns generic 200 — ignore.
       setResetSent(true);
     } finally {
       setResetting(false);
@@ -113,7 +118,7 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
           <DialogHeader>
             <DialogTitle>Edit user</DialogTitle>
             <DialogDescription>
-              Update profile and access for <strong>{user.email}</strong>.
+              Update profile and admin group for <strong>{user.email}</strong>.
             </DialogDescription>
           </DialogHeader>
 
@@ -176,10 +181,16 @@ export function EditAdminSheet({ open, onOpenChange, role, user }: EditAdminShee
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label>Access</Label>
-              <AccessTableField value={access} onChange={setAccess} />
-            </div>
+            {needsGroup ? (
+              <div className="flex flex-col gap-2">
+                <Label>Admin group</Label>
+                <AdminGroupPicker
+                  role={role as AdminGroupRole}
+                  value={adminGroupId}
+                  onChange={setAdminGroupId}
+                />
+              </div>
+            ) : null}
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>

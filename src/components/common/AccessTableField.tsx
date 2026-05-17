@@ -21,7 +21,7 @@ type Column = (typeof COLUMNS)[number];
 const writeActions = ["create", "update"];
 
 interface AccessTableFieldProps {
-  /** Currently selected permissions, e.g. ["waitlist:read", "admins:*"] */
+  /** Currently selected permissions, e.g. ["waitlist:read", "partners:*"] */
   value: string[];
   onChange: (next: string[]) => void;
   /** Defaults button — sets value to the role's default access. */

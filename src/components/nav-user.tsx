@@ -31,9 +31,9 @@ const initialsOf = (name: string): string =>
     .join("") || "?";
 
 const roleLabel = (role: string): string => {
+  if (role === "tenet") return "Tenet";
   if (role === "operator") return "Operator";
-  if (role === "superuser") return "SuperUser";
-  return "Admin";
+  return "Partner";
 };
 
 export function NavUser() {

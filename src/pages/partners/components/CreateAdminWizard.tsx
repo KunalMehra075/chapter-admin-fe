@@ -12,11 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AccessTableField } from "./AccessTableField";
+import { AdminGroupPicker } from "./AdminGroupPicker";
 import { useCreateAdmin } from "@/hooks/useAdmins";
-import { usePermissionsCatalog } from "@/hooks/usePermissionsCatalog";
 import { extractApiError } from "@/lib/api-error";
 import type { Role } from "@/lib/permissions";
+import type { AdminGroupRole } from "@/api/admin-groups";
 
 interface CreateAdminWizardProps {
   open: boolean;
@@ -27,9 +27,9 @@ interface CreateAdminWizardProps {
 const MIN_PASSWORD_LENGTH = 8;
 
 const roleLabel = (role: Role): string => {
+  if (role === "tenet") return "Tenet";
   if (role === "operator") return "Operator";
-  if (role === "superuser") return "SuperUser";
-  return "Admin";
+  return "Partner";
 };
 
 const blank = {
@@ -43,17 +43,17 @@ const blank = {
 export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [basics, setBasics] = useState(blank);
-  const [access, setAccess] = useState<string[]>([]);
+  const [adminGroupId, setAdminGroupId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: catalog } = usePermissionsCatalog();
   const createMutation = useCreateAdmin(role);
+  const needsGroup = role !== "tenet";
 
   useEffect(() => {
     if (open) {
       setStep(1);
       setBasics(blank);
-      setAccess([]);
+      setAdminGroupId(null);
       setError(null);
     }
   }, [open]);
@@ -68,22 +68,12 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
     return null;
   };
 
-  const onNext = () => {
-    const err = validateStep1();
-    if (err) {
-      setError(err);
-      return;
-    }
-    setError(null);
-    setStep(2);
-  };
-
-  const applyDefaults = () => {
-    if (catalog) setAccess(catalog.defaultAccess[role] ?? []);
-  };
-
   const submitCreate = async () => {
     setError(null);
+    if (needsGroup && !adminGroupId) {
+      setError("Pick an admin group");
+      return;
+    }
     try {
       await createMutation.mutateAsync({
         name: basics.name.trim(),
@@ -91,7 +81,7 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
         password: basics.password,
         phone: basics.phone.trim() || undefined,
         address: basics.address.trim() || undefined,
-        access: access.length > 0 ? access : undefined,
+        adminGroupId: needsGroup ? adminGroupId : null,
       });
       toast.success(`${roleLabel(role)} invited successfully`);
       onOpenChange(false);
@@ -103,6 +93,20 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
         return;
       }
       setError(apiErr.message);
+    }
+  };
+
+  const onNext = () => {
+    const err = validateStep1();
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    if (needsGroup) {
+      setStep(2);
+    } else {
+      submitCreate();
     }
   };
 
@@ -120,8 +124,9 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
           <DialogHeader>
             <DialogTitle>Invite {roleLabel(role)}</DialogTitle>
             <DialogDescription>
-              Step {step} of 2 —{" "}
-              {step === 1 ? "Basic info" : "Permissions"}.
+              {needsGroup
+                ? `Step ${step} of 2 — ${step === 1 ? "Basic info" : "Admin group"}.`
+                : "Basic info."}
             </DialogDescription>
           </DialogHeader>
 
@@ -184,11 +189,10 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
                 </div>
               </>
             ) : (
-              <AccessTableField
-                value={access}
-                onChange={setAccess}
-                onApplyDefaults={applyDefaults}
-                defaultsLabel={`${roleLabel(role)} defaults`}
+              <AdminGroupPicker
+                role={role as AdminGroupRole}
+                value={adminGroupId}
+                onChange={setAdminGroupId}
               />
             )}
 
@@ -203,8 +207,16 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="button" onClick={onNext}>
-                  Next
+                <Button
+                  type="button"
+                  onClick={onNext}
+                  disabled={createMutation.isPending}
+                >
+                  {needsGroup
+                    ? "Next"
+                    : createMutation.isPending
+                      ? "Creating…"
+                      : "Create user"}
                 </Button>
               </>
             ) : (
@@ -215,7 +227,7 @@ export function CreateAdminWizard({ open, onOpenChange, role }: CreateAdminWizar
                 <Button
                   type="button"
                   onClick={submitCreate}
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || !adminGroupId}
                 >
                   {createMutation.isPending ? "Creating…" : "Create user"}
                 </Button>

@@ -1,4 +1,4 @@
-import { AdminManagementPage } from "@/pages/admins/components/AdminManagementPage";
+import { AdminManagementPage } from "@/pages/partners/components/AdminManagementPage";
 
 export default function OperatorsPage() {
   return <AdminManagementPage role="operator" />;

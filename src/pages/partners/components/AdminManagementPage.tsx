@@ -26,20 +26,20 @@ const formatDate = (iso: string | null) => {
 };
 
 const PAGE_META: Record<Role, { title: string; description: string; cta: string }> = {
+  tenet: {
+    title: "Tenets",
+    description: "Manage tenets — these have full system access.",
+    cta: "Invite tenet",
+  },
   operator: {
     title: "Operators",
-    description: "Manage operators — these have full system access.",
-    cta: "Invite operator",
+    description: "Manage Operators — they can administer users and modules.",
+    cta: "Invite Operator",
   },
-  superuser: {
-    title: "SuperUsers",
-    description: "Manage SuperUsers — they can administer users and modules.",
-    cta: "Invite SuperUser",
-  },
-  admin: {
-    title: "Admins",
-    description: "Manage admins with module-scoped permissions.",
-    cta: "Invite admin",
+  partner: {
+    title: "Partners",
+    description: "Manage partners with module-scoped permissions.",
+    cta: "Invite partner",
   },
 };
 

@@ -8,10 +8,10 @@ import {
 import type { Role } from "@/lib/permissions";
 
 const keys = {
-  all: (role: Role) => ["admins", role] as const,
+  all: (role: Role) => ["partners", role] as const,
   list: (role: Role, params: AdminListParams) =>
-    ["admins", role, "list", params] as const,
-  one: (role: Role, id: string) => ["admins", role, "one", id] as const,
+    ["partners", role, "list", params] as const,
+  one: (role: Role, id: string) => ["partners", role, "one", id] as const,
 };
 
 export const useAdminList = (role: Role, params: AdminListParams) =>

@@ -1,6 +1,6 @@
 export const WILDCARD = "*";
 
-export type Role = "operator" | "superuser" | "admin";
+export type Role = "tenet" | "operator" | "partner";
 
 export const hasPermission = (
   userAccess: string[] | undefined | null,
